@@ -13,6 +13,7 @@ use Yii;
  * @property string $password_hash
  * @property string|null $auth_key
  * @property int $status
+ * @property string|null $verification_token
  * @property int|null $created_at
  * @property int|null $updated_at
  */
@@ -34,13 +35,14 @@ class BaseUser extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['auth_key', 'created_at', 'updated_at'], 'default', 'value' => null],
+            [['auth_key', 'verification_token', 'created_at', 'updated_at'], 'default', 'value' => null],
             [['status'], 'default', 'value' => 1],
             [['username', 'email', 'password_hash'], 'required'],
             [['status', 'created_at', 'updated_at'], 'integer'],
-            [['username', 'email', 'password_hash', 'auth_key'], 'string', 'max' => 255],
+            [['username', 'email', 'password_hash', 'auth_key', 'verification_token'], 'string', 'max' => 255],
             [['username'], 'unique'],
             [['email'], 'unique'],
+            [['verification_token'], 'unique'],
         ];
     }
 
@@ -56,6 +58,7 @@ class BaseUser extends \yii\db\ActiveRecord
             'password_hash' => 'Password Hash',
             'auth_key' => 'Auth Key',
             'status' => 'Status',
+            'verification_token' => 'Verification Token',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];

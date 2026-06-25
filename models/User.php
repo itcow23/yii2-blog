@@ -107,9 +107,20 @@ class User extends BaseUser implements IdentityInterface
     {
         $this->auth_key = Yii::$app->security->generateRandomString();
     }
+    public function generateVerificationToken()
+    {
+        $this->verification_token = Yii::$app->security->generateRandomString() . '_' . time();
+    }
+    public static function findByVerificationToken(string $token): ?self
+    {
+        return static::findOne([
+            'verification_token' => $token,
+            'status' => self::STATUS_INACTIVE,
+        ]);
+    }
     public function getRoles()
     {
         $auth = Yii::$app->authManager;
-       return array_keys($auth->getRolesByUser($this->id));
+        return array_keys($auth->getRolesByUser($this->id));
     }
 }
