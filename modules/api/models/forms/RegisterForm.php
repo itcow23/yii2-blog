@@ -42,7 +42,8 @@ class RegisterForm extends Model
             $user->email = $this->email;
             $user->setPassword($this->password);
             $user->generateAuthKey();
-            $user->status = User::STATUS_ACTIVE;
+            $user->generateVerificationToken();
+            $user->status = User::STATUS_INACTIVE;
 
             if ($user->save()) {
                 $auth = Yii::$app->authManager;
@@ -50,17 +51,27 @@ class RegisterForm extends Model
                 if ($readerRole) {
                     $auth->assign($readerRole, $user->id);
                 }
-
-               $transaction->commit();
-               return $user;
+                try {
+                    $verifyLink = Yii::$app->urlManager->createAbsoluteUrl(['api/auth/verify-email', 't' => $user->verification_token]);
+                    Yii::$app->mailer->compose(
+                        ['html' => 'verify-email-html'],
+                        ['user' => $user, 'verifyLink' => $verifyLink]
+                    )
+                        ->setFrom([$_ENV['SMTP_USERNAME'] => 'Yii2 Blog Support'])
+                        ->setTo($user->email)
+                        ->setSubject('Xác thực tài khoản - Yii2 Blog')
+                        ->send();
+                } catch (\Exception $e) {
+                    Yii::error('Không thể gửi mail xác thực: ' . $e->getMessage(), 'mailer');
+                }
+                $transaction->commit();
+                return $user;
             }
-
-        }catch(\Exception $e) {
+        } catch (\Exception $e) {
             $transaction->rollback();
             $this->addError('register', Yii::t('app', 'Registration failed.') . $e->getMessage());
         }
 
         return null;
-
     }
 }

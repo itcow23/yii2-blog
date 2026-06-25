@@ -18,9 +18,10 @@ class AuthController extends BaseController
                 'login' => ['POST'],
                 'logout' => ['POST'],
                 'me' => ['GET'],
+                'verify-email' => ['GET'],
             ],
         ];
-        $behaviors['authenticator']['optional'] = ['register', 'login'];
+        $behaviors['authenticator']['optional'] = ['register', 'login', 'verify-email'];
         return $behaviors;
     }
 
@@ -30,7 +31,10 @@ class AuthController extends BaseController
         $form->load(Yii::$app->request->post(), '');
         $user = $form->register();
         if ($user) {
-            return $user;
+            return [
+                'message' => Yii::t('app', 'Registration successful. Please check your email to verify your account.'),
+                'user' => $user
+            ];
         }
         Yii::$app->response->statusCode = self::HTTP_UNPROCESSABLE_ENTITY;
         return [
@@ -67,12 +71,48 @@ class AuthController extends BaseController
         }
 
         return [
-            'message' => Yii::t('app','Logout successfully.'),
+            'message' => Yii::t('app', 'Logout successfully.'),
         ];
     }
 
     public function actionMe()
     {
         return Yii::$app->user->identity;
+    }
+
+    public function actionVerifyEmail($token)
+    {
+        if (empty($token) || !is_string($token)) {
+            Yii::$app->response->statusCode = self::HTTP_UNPROCESSABLE_ENTITY;
+            return [
+                'errors' => [
+                    'token' => [Yii::t('app', 'Token cannot be blank.')]
+                ]
+            ];
+        }
+
+        $user = \app\models\User::findByVerificationToken($token);
+        if (!$user) {
+            Yii::$app->response->statusCode = self::HTTP_UNPROCESSABLE_ENTITY;
+            return [
+                'errors' => [
+                    'token' => [Yii::t('app', 'Invalid or expired verification token.')]
+                ]
+            ];
+        }
+
+        $user->status = \app\models\User::STATUS_ACTIVE;
+        $user->verification_token = null;
+
+        if ($user->save()) {
+            return [
+                'message' => Yii::t('app', 'Your email has been verified successfully. You can now login.')
+            ];
+        }
+
+        Yii::$app->response->statusCode = self::HTTP_UNPROCESSABLE_ENTITY;
+        return [
+            'errors' => $user->errors
+        ];
     }
 }
