@@ -38,8 +38,15 @@ $config = [
             \yii\mail\MailerInterface::class => [
                 'class' => \yii\symfonymailer\Mailer::class,
                 // send all mails to a file by default.
-                'useFileTransport' => true,
+                'useFileTransport' => ($_ENV['MAIL_USE_FILE_TRANSPORT'] ?? 'true') === 'true',
                 'viewPath' => '@app/mail',
+                'transport' => [
+                    'scheme' => ($_ENV['SMTP_ENCRYPTION'] ?? 'tls') === 'ssl' ? 'smtps' : 'smtp',
+                    'host' => $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com',
+                    'username' => $_ENV['SMTP_USERNAME'] ?? '',
+                    'password' => $_ENV['SMTP_PASSWORD'] ?? '',
+                    'port' => $_ENV['SMTP_PORT'] ?? 587,
+                ]
             ],
         ],
     ],
@@ -83,6 +90,7 @@ $config = [
                 'POST api/auth/login' => 'api/auth/login',
                 'POST api/auth/logout' => 'api/auth/logout',
                 'GET api/auth/me' => 'api/auth/me',
+                'GET api/auth/verify-email' => 'api/auth/verify-email',
 
                 // admin
                 [
@@ -135,8 +143,18 @@ $config = [
 
                     $message = $isSuccess ? 'Success' : ($response->statusText ?: 'Error');
 
-                    if (!$isSuccess && is_array($data) && isset($data['message'])) {
+                    if (is_array($data) && isset($data['message'])) {
                         $message = $data['message'];
+                        if ($isSuccess) {
+                            if (count($data) === 1) {
+                                $data = null;
+                            } else {
+                                unset($data['message']);
+                                if (count($data) === 1) {
+                                    $data = reset($data);
+                                }
+                            }
+                        }
                     }
 
                     $formatData = [
