@@ -1,0 +1,9 @@
+actor: ApiTester
+modules:
+    enabled:
+        - Asserts
+        - Yii2:
+            configFile: 'config/web.php'
+        - REST:
+            depends: Yii2
+step_decorators: ~
