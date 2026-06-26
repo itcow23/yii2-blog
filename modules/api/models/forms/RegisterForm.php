@@ -52,7 +52,12 @@ class RegisterForm extends Model
                     $auth->assign($readerRole, $user->id);
                 }
                 try {
-                    $verifyLink = Yii::$app->urlManager->createAbsoluteUrl(['api/auth/verify-email', 't' => $user->verification_token]);
+                    $frontendBase = Yii::$app->request->headers->get('X-Frontend-Base');
+                    if ($frontendBase) {
+                        $verifyLink = rtrim($frontendBase, '/') . '/#verify-email?t=' . $user->verification_token;
+                    } else {
+                        $verifyLink = Yii::$app->urlManager->createAbsoluteUrl(['api/auth/verify-email', 't' => $user->verification_token]);
+                    }
                     Yii::$app->mailer->compose(
                         ['html' => 'verify-email-html'],
                         ['user' => $user, 'verifyLink' => $verifyLink]

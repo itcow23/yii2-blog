@@ -80,8 +80,11 @@ class AuthController extends BaseController
         return Yii::$app->user->identity;
     }
 
-    public function actionVerifyEmail($token)
+    public function actionVerifyEmail($token = null)
     {
+        if ($token === null) {
+            $token = Yii::$app->request->get('t');
+        }
         if (empty($token) || !is_string($token)) {
             Yii::$app->response->statusCode = self::HTTP_UNPROCESSABLE_ENTITY;
             return [
