@@ -28,12 +28,17 @@ class CategoryController extends BaseController
                 'delete' => ['DELETE'],
             ],
         ];
+        $behaviors['authenticator']['optional'] = ['index', 'view'];
         $behaviors['access'] = [
             'class' => AccessControl::class,
             'rules' => [
                 [
                     'allow' => true,
-                    'actions' => ['index', 'view', 'create', 'update', 'delete'],
+                    'actions' => ['index', 'view'],
+                ],
+                [
+                    'allow' => true,
+                    'actions' => ['create', 'update', 'delete'],
                     'roles' => [Permission::MANAGE_CATEGORIES],
                 ]
             ],
